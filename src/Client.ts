@@ -22,7 +22,7 @@ export class Client {
 
     protected endpoint: string;
 
-    constructor(endpoint: string) {
+    constructor(endpoint: string, private cookie: string) {
         this.endpoint = endpoint;
         this.auth = new Auth(this.endpoint);
         this.push = new Push(this.endpoint);
@@ -66,15 +66,28 @@ export class Client {
             options.token = this.auth.token;
         }
 
+        const headers = {
+            'Accept': 'application/json',
+            'credentials': 'same-origin',
+            'withCredentials': 'true',
+            'Content-Type': 'application/json',
+            'Cookie': this.cookie,
+        };
+        console.log('***************');
+        console.log(headers);
+        console.log('***************');
+
         const response = (
             await post(url, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(options)
+                headers,
+                body: JSON.stringify(options),
             })
         ).data;
+
+        console.log('***************');
+        console.log(response);
+        console.log('***************');
+
 
         if (response.error) {
             throw new MatchMakeError(response.error, response.code);
@@ -84,7 +97,7 @@ export class Client {
         room.id = response.room.roomId;
         room.sessionId = response.sessionId;
 
-        room.connect(this.buildEndpoint(response.room, { sessionId: room.sessionId }));
+        room.connect(this.buildEndpoint(response.room, { sessionId: room.sessionId }), this.cookie);
 
         return new Promise((resolve, reject) => {
             const onError = (message) => reject(message);
