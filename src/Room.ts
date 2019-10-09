@@ -17,7 +17,7 @@ export interface RoomAvailable<Metadata> {
     metadata?: Metadata;
 }
 
-export class Room<State= any> {
+export class Room<State = any> {
     public id: string;
     public sessionId: string;
 
@@ -59,11 +59,11 @@ export class Room<State= any> {
     }
 
     public connect(endpoint: string, cookie: string) {
-        this.connection = new Connection(endpoint, false);
+        this.connection = new Connection(endpoint, false, cookie);
         this.connection.reconnectEnabled = false;
         this.connection.onmessage = this.onMessageCallback.bind(this);
         this.connection.onclose = (e: CloseEvent) => {
-            this.onLeave.invoke(e.code)
+            this.onLeave.invoke(e.code);
         };
         this.connection.onerror = (e: CloseEvent) => {
             console.warn(`Room, onError (${e.code}): ${e.reason}`);
@@ -89,7 +89,7 @@ export class Room<State= any> {
         this.connection.send([Protocol.ROOM_DATA, data]);
     }
 
-    public get state (): State {
+    public get state(): State {
         return this.serializer.getState();
     }
 

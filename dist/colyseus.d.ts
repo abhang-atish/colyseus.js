@@ -4,7 +4,7 @@
 
 declare namespace Colyseus {
     class Client {
-        constructor(url: string);
+        constructor(url: string, cookie: string);
         joinOrCreate<T = any>(roomName: string, options?: any, rootSchema?: any): Promise<Room<T>>;
         create<T = any>(roomName: string, options?: any, rootSchema?: any): Promise<Room<T>>;
         join<T = any>(roomName: string, options?: any, rootSchema?: any): Promise<Room<T>>;

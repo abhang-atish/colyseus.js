@@ -4,8 +4,8 @@ import * as msgpack from './msgpack';
 export class Connection extends WebSocketClient {
     private _enqueuedCalls: any[] = [];
 
-    constructor(url: string, autoConnect: boolean = true) {
-        super(url, undefined, { connect: autoConnect });
+    constructor(url: string, autoConnect: boolean = true, cookie: string) {
+        super(url, undefined, { connect: autoConnect, cookie });
     }
 
     public onOpenCallback(event) {
@@ -25,7 +25,7 @@ export class Connection extends WebSocketClient {
 
     public send(data: any): void {
         if (this.ws.readyState === WebSocketClient.OPEN) {
-            return super.send( msgpack.encode(data) );
+            return super.send(msgpack.encode(data));
 
         } else {
             // WebSocket not connected.
