@@ -9,6 +9,8 @@ import { FossilDeltaSerializer } from './serializer/FossilDeltaSerializer';
 import { Listener } from '@gamestdio/state-listener';
 import { SchemaSerializer } from '.';
 import { RootSchemaConstructor } from './serializer/SchemaSerializer';
+import { log } from 'util';
+import { type } from 'os';
 
 export interface RoomAvailable<Metadata> {
     roomId: string;
@@ -17,7 +19,7 @@ export interface RoomAvailable<Metadata> {
     metadata?: Metadata;
 }
 
-export class Room<State= any> {
+export class Room<State = any> {
     public id: string;
     public sessionId: string;
 
@@ -59,11 +61,12 @@ export class Room<State= any> {
     }
 
     public connect(endpoint: string) {
+        console.log('Connection to ws', endpoint);
         this.connection = new Connection(endpoint, false);
         this.connection.reconnectEnabled = false;
         this.connection.onmessage = this.onMessageCallback.bind(this);
         this.connection.onclose = (e: CloseEvent) => {
-            this.onLeave.invoke(e.code)
+            this.onLeave.invoke(e.code);
         };
         this.connection.onerror = (e: CloseEvent) => {
             console.warn(`Room, onError (${e.code}): ${e.reason}`);
@@ -89,7 +92,7 @@ export class Room<State= any> {
         this.connection.send([Protocol.ROOM_DATA, data]);
     }
 
-    public get state (): State {
+    public get state(): State {
         return this.serializer.getState();
     }
 
@@ -125,6 +128,7 @@ export class Room<State= any> {
     }
 
     protected onMessageCallback(event: MessageEvent) {
+
         if (!this.previousCode) {
             const view = new DataView(event.data);
             const code = view.getUint8(0);
@@ -154,6 +158,7 @@ export class Room<State= any> {
                 this.onJoin.invoke();
 
             } else if (code === Protocol.JOIN_ERROR) {
+                console.error('sdk', 'JOIN_ERROR', 11);
                 this.onError.invoke(utf8Read(view, 1));
 
             } else if (code === Protocol.LEAVE_ROOM) {

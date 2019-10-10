@@ -4,6 +4,9 @@ import { Room, RoomAvailable } from './Room';
 import { Auth } from './Auth';
 import { Push } from './Push';
 import { RootSchemaConstructor } from './serializer/SchemaSerializer';
+import { Connection } from './Connection';
+import { log } from 'util';
+import * as msgpack from './msgpack';
 
 export type JoinOptions = any;
 
@@ -48,56 +51,53 @@ export class Client {
         return await this.createMatchMakeRequest<T>('joinById', roomId, { sessionId }, rootSchema);
     }
 
-    public async getAvailableRooms<Metadata= any>(roomName: string = ''): Promise<RoomAvailable<Metadata>[]> {
+    public async getAvailableRooms<Metadata = any>(roomName: string = ''): Promise<RoomAvailable<Metadata>[]> {
         const url = `${this.endpoint.replace('ws', 'http')}/matchmake/${roomName}`;
-        return (await get(url, { headers: { 'Accept': 'application/json' } })).data;
+        return (await get(url, { headers: { Accept: 'application/json' } })).data;
     }
 
     protected async createMatchMakeRequest<T>(
         method: string,
         roomName: string,
         options: JoinOptions = {},
-        rootSchema?: RootSchemaConstructor
+        rootSchema?: RootSchemaConstructor,
     ): Promise<Room<T>> {
-        const url = `${this.endpoint.replace('ws', 'http')}/matchmake/${method}/${roomName}`;
+        console.log(options);
+        let room: Room;
 
-        // automatically forward auth token, if present
-        if (this.auth.hasToken) {
-            options.token = this.auth.token;
-        }
+        const _url = `${this.endpoint}/matchmake/${method}/${roomName}`;
 
-        const headers = {
-            'Accept': 'application/json',
-            'credentials': 'same-origin',
-            'withCredentials': 'true',
-            'Content-Type': 'application/json',
+        console.log(_url);
+        const connection = new Connection(_url);
+
+        connection.onopen = (event: MessageEvent) => {
+            console.log('connection open');
+            connection.send(JSON.stringify(options));
         };
-
-        const response = (
-            await post(url, {
-                headers,
-                body: JSON.stringify(options),
-            })
-        ).data;
-
-        if (response.error) {
-            throw new MatchMakeError(response.error, response.code);
-        }
-
-        const room = this.createRoom<T>(roomName, rootSchema);
-        room.id = response.room.roomId;
-        room.sessionId = response.sessionId;
-
-        room.connect(this.buildEndpoint(response.room, { sessionId: room.sessionId }));
-
         return new Promise((resolve, reject) => {
-            const onError = (message) => reject(message);
-            room.onError.once(onError);
+            connection.onmessage = (event: MessageEvent) => {
+                const response = JSON.parse(event.data);
+                console.log(response);
+                room = this.createRoom<T>(roomName, rootSchema);
+                room.id = response.room.roomId;
+                room.sessionId = response.sessionId;
 
-            room.onJoin.once(() => {
-                room.onError.remove(onError);
-                resolve(room);
-            });
+                const _url2 = this.buildEndpoint(response.room, { sessionId: room.sessionId });
+
+                room.connect(_url2);
+
+                const onError = (message: any) => {
+                    console.error('ERROR', message);
+                    reject(message);
+                };
+                room.onError.once(onError);
+
+                room.onJoin.once(() => {
+                    room.onError.remove(onError);
+                    console.log('onJoin', room.id);
+                    resolve(room);
+                });
+            };
         });
     }
 
@@ -117,5 +117,4 @@ export class Client {
 
         return `${this.endpoint}/${room.processId}/${room.roomId}?${params.join('&')}`;
     }
-
 }
