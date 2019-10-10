@@ -61,7 +61,7 @@ export class Room<State = any> {
     }
 
     public connect(endpoint: string) {
-        console.log('Connection to ws', endpoint);
+
         this.connection = new Connection(endpoint, false);
         this.connection.reconnectEnabled = false;
         this.connection.onmessage = this.onMessageCallback.bind(this);

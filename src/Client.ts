@@ -62,39 +62,40 @@ export class Client {
         options: JoinOptions = {},
         rootSchema?: RootSchemaConstructor,
     ): Promise<Room<T>> {
-        console.log(options);
-        let room: Room;
 
+        let room: Room;
         const _url = `${this.endpoint}/matchmake/${method}/${roomName}`;
 
-        console.log(_url);
         const connection = new Connection(_url);
 
         connection.onopen = (event: MessageEvent) => {
-            console.log('connection open');
             connection.send(JSON.stringify(options));
         };
         return new Promise((resolve, reject) => {
             connection.onmessage = (event: MessageEvent) => {
                 const response = JSON.parse(event.data);
-                console.log(response);
+
+                if (response.hasOwnProperty('error')) {
+                    connection.close();
+                    throw new MatchMakeError(response.error, response.code);
+                }
+
                 room = this.createRoom<T>(roomName, rootSchema);
                 room.id = response.room.roomId;
                 room.sessionId = response.sessionId;
+                connection.close();
 
                 const _url2 = this.buildEndpoint(response.room, { sessionId: room.sessionId });
 
                 room.connect(_url2);
 
                 const onError = (message: any) => {
-                    console.error('ERROR', message);
                     reject(message);
                 };
                 room.onError.once(onError);
 
                 room.onJoin.once(() => {
                     room.onError.remove(onError);
-                    console.log('onJoin', room.id);
                     resolve(room);
                 });
             };
