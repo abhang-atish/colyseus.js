@@ -1,4 +1,4 @@
-import { post, get } from "httpie";
+import { post, get } from 'httpie';
 
 import { Room, RoomAvailable } from './Room';
 import { Auth } from './Auth';
@@ -22,7 +22,7 @@ export class Client {
 
     protected endpoint: string;
 
-    constructor(endpoint: string = `${location.protocol.replace("http", "ws")}//${location.hostname}${(location.port && `:${location.port}`)}`) {
+    constructor(endpoint: string = `${location.protocol.replace('http', 'ws')}//${location.hostname}${(location.port && `:${location.port}`)}`) {
         this.endpoint = endpoint;
         this.auth = new Auth(this.endpoint);
         this.push = new Push(this.endpoint);
@@ -48,8 +48,8 @@ export class Client {
         return await this.createMatchMakeRequest<T>('joinById', roomId, { sessionId }, rootSchema);
     }
 
-    public async getAvailableRooms<Metadata= any>(roomName: string = ""): Promise<RoomAvailable<Metadata>[]> {
-        const url = `${this.endpoint.replace("ws", "http")}/matchmake/${roomName}`;
+    public async getAvailableRooms<Metadata= any>(roomName: string = ''): Promise<RoomAvailable<Metadata>[]> {
+        const url = `${this.endpoint.replace('ws', 'http')}/matchmake/${roomName}`;
         return (await get(url, { headers: { 'Accept': 'application/json' } })).data;
     }
 
@@ -59,7 +59,7 @@ export class Client {
         options: JoinOptions = {},
         rootSchema?: RootSchemaConstructor
     ): Promise<Room<T>> {
-        const url = `${this.endpoint.replace("ws", "http")}/matchmake/${method}/${roomName}`;
+        const url = `${this.endpoint.replace('ws', 'http')}/matchmake/${method}/${roomName}`;
 
         // automatically forward auth token, if present
         if (this.auth.hasToken) {
@@ -72,14 +72,13 @@ export class Client {
             'withCredentials': 'true',
             'Content-Type': 'application/json',
         };
-        
+
         const response = (
             await post(url, {
                 headers,
                 body: JSON.stringify(options),
             })
         ).data;
-
 
         if (response.error) {
             throw new MatchMakeError(response.error, response.code);

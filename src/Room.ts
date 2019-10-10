@@ -45,13 +45,13 @@ export class Room<State= any> {
         this.name = name;
 
         if (rootSchema) {
-            this.serializer = new (getSerializer("schema"));
+            this.serializer = new (getSerializer('schema'));
             this.rootSchema = rootSchema;
             (this.serializer as SchemaSerializer).state = new (rootSchema)();
 
         } else {
             // TODO: remove default serializer. it should arrive only after JOIN_ROOM.
-            this.serializer = new (getSerializer("fossil-delta"));
+            this.serializer = new (getSerializer('fossil-delta'));
         }
 
         this.onError((message) => console.error(message));
@@ -96,12 +96,12 @@ export class Room<State= any> {
     // TODO: deprecate / move somewhere else
     // this method is useful only for FossilDeltaSerializer
     public listen(segments: string, callback: Function, immediate?: boolean) {
-        if (this.serializerId === "schema") {
+        if (this.serializerId === 'schema') {
             console.error(`'${this.serializerId}' serializer doesn't support .listen() method.`);
             return;
 
         } else if (!this.serializerId) {
-            console.warn("room.Listen() should be called after room.onJoin has been called (DEPRECATION WARNING)");
+            console.warn('room.Listen() should be called after room.onJoin has been called (DEPRECATION WARNING)');
         }
 
         return (this.serializer as FossilDeltaSerializer<State>).api.listen(segments, callback, immediate);
@@ -138,11 +138,11 @@ export class Room<State= any> {
                 // get serializer implementation
                 const serializer = getSerializer(this.serializerId);
                 if (!serializer) {
-                    throw new Error("missing serializer: " + this.serializerId);
+                    throw new Error('missing serializer: ' + this.serializerId);
                 }
 
                 // TODO: remove this check
-                if (this.serializerId !== "fossil-delta" && !this.rootSchema) {
+                if (this.serializerId !== 'fossil-delta' && !this.rootSchema) {
                     this.serializer = new serializer();
                 }
 
